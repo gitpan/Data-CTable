@@ -1,5 +1,11 @@
 Revision history for Data::CTable
 	
+0.99 2002-05-15
+
+	- Fixed bug in write(), sort() and a few other subroutines which
+	  was ignoring overridden _Selection parameter when using named
+	  calling convention.
+
 0.98 2002-05-08
 
 	- Fixed bug in test suite causing test 24 to fail instead of

@@ -5,7 +5,7 @@ use strict;
 
 package Data::CTable;
 
-use vars qw($VERSION);				$VERSION = '0.98';
+use vars qw($VERSION);				$VERSION = '0.99';
 
 =pod
 
@@ -3491,7 +3491,7 @@ sub sort
 
 	my($SortOrder, $Selection, $SortSpecs, $SRoutines, $DefaultSortType, $DefaultSortDirection)
 		= map {$this->getparam($Params, $_)} 
-	qw(_SortOrder  _Selection, _SortSpecs  _SRoutines  _DefaultSortType  _DefaultSortDirection);
+	qw(_SortOrder  _Selection  _SortSpecs  _SRoutines  _DefaultSortType  _DefaultSortDirection);
 	
 	## Validate / rectify all parameters...
 
@@ -4133,7 +4133,7 @@ sub cull
 	my $Params		= (@_ == 1 ? {_Selection => $_[0]} : {@_});
 	
 	my($Selection, $FieldList) = map {$this->getparam($Params, $_)} 
-	qw(_Selection, _FieldList);
+	qw(_Selection  _FieldList);
 	
 	$FieldList ||= $this->{_FieldList};
 	$Selection ||= $this->{_Selection};
@@ -4175,7 +4175,7 @@ sub snapshot
 	my $Params		= (@_ == 1 ? {_Selection => $_[0]} : {@_});
 	
 	my($Selection, $FieldList) = map {$this->getparam($Params, $_)} 
-	qw(_Selection, _FieldList);
+	qw(_Selection  _FieldList);
 	
 	$FieldList ||= $this->{_FieldList};
 	$Selection ||= $this->{_Selection};
@@ -5502,7 +5502,7 @@ sub write_file		## Just write; don't worry about cacheing
 
 	my($FileName, $FieldList, $Selection, $MaxRecords, $LineEnding, $FDelimiter, $QuoteFields, $ReturnMap, $ReturnEncoding, $MacRomanMap, $HeaderRow, $WriteExtension) 
 	    = map {$this->getparam($Params, $_)} 
-	qw(_FileName  _FieldList  _Selection, _MaxRecords  _LineEnding  _FDelimiter  _QuoteFields  _ReturnMap  _ReturnEncoding  _MacRomanMap  _HeaderRow  _WriteExtension);
+	qw(_FileName  _FieldList  _Selection  _MaxRecords  _LineEnding  _FDelimiter  _QuoteFields  _ReturnMap  _ReturnEncoding  _MacRomanMap  _HeaderRow  _WriteExtension);
 
 	my $Success;
 	
