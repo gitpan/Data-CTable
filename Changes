@@ -1,5 +1,10 @@
 Revision history for Data::CTable
 	
+1.00 2002-06-29
+
+	- Updated "getweather" utility (eg/getweather.pl) for new data
+      format.
+
 0.99 2002-05-15
 
 	- Fixed bug in write(), sort() and a few other subroutines which

@@ -95,16 +95,25 @@ $Clean =~ s/(\s*\n\s*)+/\n/g;
 $Clean =~ s/[ \t]+/ /g;
 $Clean =~ s/^[ \t]+//gm;
 
+
 ## Find a table on the page that mentions "dewpoint"
 
 my $Tables		= [$HTML =~ m(<TABLE.*?>(.*?)</TABLE>)gsi];
-my $Table		= (grep {/dewpoint/i} @$Tables)[0] or die $Clean;
+my $Table		= (grep {/dew\s*point/i} @$Tables)[0] or die $Clean;
 
 ## Clean HTML code in table to remove any JavaScript lossage.
 $Table			=~ s(<SCRIPT.*?>(.*?)</SCRIPT>)()gsi;
 
 ## Extract row and cell contents.  Some rows will not have all cells.
 my $Rows		= [$Table =~ m(<TR.*?>(.*?)</TR>)gsi];
+
+## Truncate row list following the last row containing a percent sign...
+$Rows			= [@$Rows[0 .. ((grep {$Rows->[$_] =~ /%/} (0..$#$Rows))[-1])]];
+
+## Adjust for any colspans by inserting blank cells
+map {s{(<TD[^>]+?COLSPAN[^>]+?(\d+)[^>]*?>.*?</TD>)}{"<TD></TD>"x$2}gesi} @$Rows;
+
+## Extract cells from the rows...
 my $Cells		= [map {[m(<TD.*?>(.*?)</TD>)gsi]} @$Rows];
 
 ## Count the columns and make up some temporary field names F01, F02,etc.
@@ -126,39 +135,39 @@ $t->clean(sub {s(<BR>)( )gsi});
 $t->clean(sub {s(<.*?>)()gs});
 $t->clean_ws();
 
-## Truncate table following the "Chance of precipitation" row
-$t->select(F01 => sub {/chance/i});
-$t->length($t->selection()->[0]+1) if @{$t->selection()};
-$t->select_all();
+## Find the first column that contains a percent sign.
+my $LastRow = $t->row($t->length()-1);
+my $FirstPercentCol = (grep {$LastRow->{$_} =~ /%/} sort keys %$LastRow)[0];
 
-## Remove any rows that are empty in the third column (F03)
-$t->select(F03 => sub {!/^$/i});
+## Remove any rows that are empty in that column...
+$t->select($FirstPercentCol => sub {!/^$/i});
 $t->cull();
+
 
 ## Remove any columns that are empty
 my $EmptyCols	= [grep {!grep {length} @{$t->col($_)}} @{$t->fieldlist()}];
 foreach (@$EmptyCols) {$t->col_delete($_)};
 
-## Add missing data labels in temporary column F01 for first two data fields.
-$t->col('F01')->[0] = "Day";
-$t->col('F01')->[1] = "Date";
+## Add missing data labels in first two columns
+$t->col(($t->fieldlist())->[0])->[0] = "Time";
+$t->col(($t->fieldlist())->[1])->[0] = "Forecast";
 
-## "Flip" the table so the labels in F01 become the field names (rows <==> columns)
-$t->invert('F01');
+## Freeze the order of the fields in current F01..Fxx ordering.
+$t->fieldlist_freeze();
+
+## Rename columns using values in first row; then delete it.
+$t->col_rename(%{$t->row(0)});
+$t->row_delete(0);
+
+## Get current field names...
+my $Fs = $t->fieldlist();
 
 ## Shorten some field names for a narrower final output.
-$t->col_rename('Weather Forecast'	=>	'Forecast');
-$t->col_rename('Chance of Precip.'	=>	'Precip');
-$t->col_rename('Temperature'		=>	'Temp');
-$t->col_rename('Feels Like'			=>	'Feels');
-$t->col_rename('Dewpoint'			=>	'Dew');
-$t->col_rename('Humidity'			=>	'Hum');
-
-## Modify the field list so a NEW 'Hour' field precedes 'Forecast'.
-$t->fieldlist([map {($_ eq 'Forecast' ? (qw(Hour Forecast)) : $_)} @{$t->fieldlist()}]);
-
-## Remove the time info from the Forecast field and insert it into Hour instead.
-$t->calc(sub {$main::Hour = ($main::Forecast =~ s{^(.*?[AP]M) }{}i ? $1 : undef)});
+$t->col_rename((grep {/precip/i} @$Fs)[0] => 'Precip');
+$t->col_rename((grep {/dew/i   } @$Fs)[0] => 'Dew');
+$t->col_rename((grep {/hum/i   } @$Fs)[0] => 'Hum');
+$t->col_rename((grep {/feel/i  } @$Fs)[0] => 'Feels');
+$t->col_rename((grep {/temp/i  } @$Fs)[0] => 'Temp');
 
 ## Shorten the verbosity of the Wind field.
 my $Dirs    = {qw(WEST W SOUTH S NORTH N EAST E)};
