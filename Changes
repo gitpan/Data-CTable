@@ -1,5 +1,9 @@
 Revision history for Data::CTable
 	
+0.97 2002-05-07
+
+	- Fixed build shortcoming.
+
 0.96	2002-04-30
 
 	- First public release

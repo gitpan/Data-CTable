@@ -37,7 +37,7 @@ htmlifypods::
 	pod2html --noindex --css=/stylesheet/ --title=$Top::$Mod --infile=$Mod.pm --outfile=$Mod.html
 	perl fix_html.perl $Mod.html
 
-	perldoc -U -t $Top::$Mod > README
+	pod2text $Mod.pm > README
 
 ";
 };
