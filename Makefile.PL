@@ -15,10 +15,12 @@ WriteMakefile(
 			  VERSION_FROM	=> "$Mod.pm",
 			  ABSTRACT_FROM	=> "$Mod.pm",
 			  EXE_FILES     => [ map {"eg/$_"} @$Programs_To_Install ],
-			  PREREQ_PM		=> {'Storable'			=> 0, 
-								'Carp'				=> 0, 
-								'IO::File'			=> 0, 
-								'File::Basename'	=> 0},
+			  PREREQ_PM		=> {
+				  ## 'Storable'			=> 0, 
+				  ## 'Carp'				=> 0, 
+				  ## 'IO::File'			=> 0, 
+				  ## 'File::Basename'	=> 0,
+				  },
 			  PMLIBDIRS		=> ["$Mod"],
 			  clean			=> {FILES => ".AppleDouble test/.AppleDouble test/cache/* test/cache/ test/*.out* *.bak $Mod.html"},
 			  );
@@ -41,3 +43,4 @@ htmlifypods::
 
 ";
 };
+

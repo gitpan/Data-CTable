@@ -5,7 +5,7 @@ use strict;
 
 package Data::CTable;
 
-use vars qw($VERSION);				$VERSION = '0.97';
+use vars qw($VERSION);				$VERSION = '0.98';
 
 =pod
 
@@ -5852,7 +5852,7 @@ sub format	## use Data::ShowTable to format the table in a pretty way.
 	qw(_Selection  _FieldList  _SortSpecs  _DefaultSortType  _MaxRecords  _MaxWidth);
 
 	## This method relies on Data::ShowTable.
-	$this->warn("@{[__PACKAGE__]}::show() requires Data::ShowTable module."), goto done
+	$this->warn("@{[__PACKAGE__]}::show() requires optional Data::ShowTable module."), goto done
 		unless $HaveShowTable;
 	
 	$FieldList			||= $this->fieldlist();

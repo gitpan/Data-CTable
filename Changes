@@ -1,5 +1,14 @@
 Revision history for Data::CTable
 	
+0.98 2002-05-08
+
+	- Fixed bug in test suite causing test 24 to fail instead of
+	  merely warn when optional Data::ShowTable module is missing.
+
+	- Removed modules from standard Perl dist (e.g. Data::Dumper) from
+	  PREREQ_PM (having them listed there was causing CPAN to rebuild
+	  Perl)
+
 0.97 2002-05-07
 
 	- Fixed build shortcoming.

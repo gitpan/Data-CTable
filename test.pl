@@ -72,6 +72,8 @@ ok(test_timedprog());	## Timed progress; set env FAST=1 to shortcut
 ok(test_listeq());		## test the list equality testing utility (used by most other tests)
 ok(test_subclasses());	## Testing file formats
 
+1;
+
 sub test_join
 {
 	my $People   = Data::CTable->new("${TestDir}people.merge.mac.txt") or die;
@@ -1491,7 +1493,7 @@ END
 
 	my $Formatted = $People1->format();
 
-	if (!defined($Formatted)) 
+	if (!length($$Formatted)) 
 	{
 		warn("Skipping test of format() and out() methods because Data::ShowTable is not installed on this platform.");
 		return(1);
