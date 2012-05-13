@@ -5,7 +5,7 @@ use strict;
 
 package Data::CTable;
 
-use vars qw($VERSION);				$VERSION = '1.03';
+use vars qw($VERSION);				$VERSION = '1.03_01';
 
 =pod
 
@@ -4463,6 +4463,8 @@ have been written, if any, and then restrict its permissions:
 
 	     _HeaderRow     => 0,     ## No header row (_FieldList required!)
 
+	     _IgnoreQuotes  => 0,     ## Load files with unbalanced quotes
+
 	     _LineEnding    => undef, ## Text line ending (undef means guess)
 	     _FDelimiter    => undef, ## Field delimiter (undef means guess)
 
@@ -4517,6 +4519,10 @@ not expect a header row showing the field names in the file.  Instead,
 it assumes that the _FieldList gives those (and _FieldList must
 therefore be specified either as a parameter or an existing parameter
 in the object).
+
+_IgnoreQuotes is false by default. If true then we'll ignore quotes in
+the file upon import, which makes the loading of files with unbalanced
+quotes possible.
 
 _MaxRecords (optional) is an upper limit on the number of fields to
 import.  If not specified, or zero, or undef, then there is no limit;
@@ -4618,9 +4624,9 @@ sub read_file		## Read, ignoring cacheing
 	my $this		= shift;
 	my $Params		= (@_ == 1 ? {_FileName => $_[0]} : {@_});
 
-	my($FileName, $FieldList, $MaxRecords, $LineEnding, $FDelimiter, $ReturnMap, $ReturnEncoding, $MacRomanMap, $HeaderRow) 
+	my($FileName, $FieldList, $MaxRecords, $LineEnding, $FDelimiter, $ReturnMap, $ReturnEncoding, $MacRomanMap, $HeaderRow, $IgnoreQuotes) 
 	    = map {$this->getparam($Params, $_)} 
-	qw(_FileName  _FieldList  _MaxRecords  _LineEnding  _FDelimiter  _ReturnMap  _ReturnEncoding  _MacRomanMap  _HeaderRow);
+	qw(_FileName  _FieldList  _MaxRecords  _LineEnding  _FDelimiter  _ReturnMap  _ReturnEncoding  _MacRomanMap  _HeaderRow  _IgnoreQuotes);
 
 	my $Success;
 
@@ -4788,12 +4794,18 @@ sub read_file		## Read, ignoring cacheing
 		## Protect delimiters inside fields.
 		s/\000/$ZeroMarker/go;					## Preserve genuine ASCII 0 chars.
 		my $InQuote = 0;						## Initialize InQuote flag to zero.
-		s/(\")|($FDelimiter)/					## Replace delimiters inside quotes with ASCII 0 ...
-			($1 ? do{$InQuote^=1; $1} : 		##  ... if quote char, toggle InQuote flag
-			 ($InQuote ? "\000" : $2))/eg;		##  ... if delimiter, InQuote sez whether to replace or retain.
+		unless ($IgnoreQuotes) {
+			s/(\")|($FDelimiter)/					## Replace delimiters inside quotes with ASCII 0 ...
+				($1 ? do{$InQuote^=1; $1} : 		##  ... if quote char, toggle InQuote flag
+				($InQuote ? "\000" : $2))/eg;		##  ... if delimiter, InQuote sez whether to replace or retain.
+		}
 
 		## Split record into fields, then clean each field.
 
+		my $regex = qr/$FDelimiter/;
+		unless ($IgnoreQuotes) {
+			$regex = qr/\"?$FDelimiter\"?/;
+		}
 		s/^\"//; s/\"$//;  						## Kill leading, trailing quotes surrounding each record
 		my @FieldVals = 
 			map 
@@ -4805,7 +4817,7 @@ sub read_file		## Read, ignoring cacheing
 				 s/$RetRegex/\n/g if $ReturnMap;## Restore return characters that were coded as ASCII 11 (^K)
 			 }
 			 $_;}								## Return field val after above mods.
-		split(/\"?$FDelimiter\"?/, $_);			## Split on delimiters, killing optional surrounding quotes at same time.
+		split($regex, $_);			## Split on delimiters, killing optional surrounding quotes at same time.
 		
 		## Put the data into the vectors
 		foreach (@$FieldNums)
@@ -5122,6 +5134,7 @@ sub read_file_or_cache	## Read, cacheing if possible
 						 _LineEnding	=>	$this->{_LineEnding},
 						 _FDelimiter	=>	$this->{_FDelimiter},
 						 _HeaderRow		=>	$this->{_HeaderRow },
+						 _IgnoreQuotes	=> $this->{_IgnoreQuotes},
 						 _Subset		=>	$this->{_Subset    },
 						 _Newline		=>	"\n",
 						 )};
@@ -7692,9 +7705,9 @@ sub path_info
 	use Config	    qw(%Config);
 	my $OSName		=  $Config{osname};
 	
-	return({sep =>':' , up =>'::'  , cur =>':'  })	if $OSName =~ /mac                  /ix;
-	return({sep =>'\\', up =>'..\\', cur =>'.\\'})	if $OSName =~ /(?<!dar)((win)|(dos))/ix;
-	return({sep =>'/' , up =>'../' , cur =>'./' })                                         ;
+    return({sep =>':' , up =>'::'  , cur =>':'  })  if $OSName =~ /mac                          /ix;
+    return({sep =>'\\', up =>'..\\', cur =>'.\\'})  if $OSName =~ /(?<!(?:dar|cyg))((win)|(dos))/ix;
+    return({sep =>'/' , up =>'../' , cur =>'./' })                                                 ;
 }
 
 sub path_is_absolute
@@ -7704,9 +7717,9 @@ sub path_is_absolute
 	use Config		qw(%Config);
 	my $OSName		=  $Config{osname};
 	
-	return($Path =~ /^[^:]/)						if $OSName =~ /mac                  /ix;
-	return($Path =~ /^(([a-z][:])|(\\\\))/i)        if $OSName =~ /(?<!dar)((win)|(dos))/ix;
-	return($Path =~ /^\//)                                                                 ;
+    return($Path =~ /^[^:]/)                        if $OSName =~ /mac                          /ix;
+    return($Path =~ /^(([a-z][:])|(\\\\))/i)        if $OSName =~ /(?<!(?:dar|cyg))((win)|(dos))/ix;
+    return($Path =~ /^\//)                                                                         ;
 }
 
 ### min and max <nostalgic sigh>
@@ -7776,11 +7789,19 @@ I'll review the code and add it (at my discretion).
 If you've got a module that uses, augments, or complements this one,
 let me know that, too, and I'll make appropriate mention of it.
 
+=head1 AUTHORS
+
+Chris Thorman <chthorman@cpan.org>
+
+Jay Hannah <jay.hannah@iinteractive.com>
+
 =head1 SEE ALSO
 
-The Data::CTable home page:
+The Data::CTable home page: http://christhorman.com/projects/perl/Data-CTable/
 
-	http://christhorman.com/projects/perl/Data-CTable/
+Version control: https://github.com/jhannah/data-ctable/issues
+
+Report bugs: https://rt.cpan.org/Public/Dist/Display.html?Name=Data-CTable
 
 The implementation in CTable.pm.
 
@@ -7792,11 +7813,9 @@ The Data::Table module by Yingyao Zhou & Guangzhou Zou.
 
 The perlref manual page.
 
-=head1 AUTHOR
+=head1 LICENSE
 
-Chris Thorman <chthorman@cpan.org>
-
-Copyright (c) 1995-2002 Chris Thorman.  All rights reserved.  
+Copyright (c) 1995-2012 Chris Thorman.  All rights reserved.  
 
 This program is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.
@@ -7804,4 +7823,6 @@ it under the same terms as Perl itself.
 =cut
 
 1;
+
+
 
