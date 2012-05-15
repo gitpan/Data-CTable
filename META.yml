@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:               Data-CTable
-version:            1.03_01
+version:            1.03_02
 abstract:           Read, write, manipulate tabular data
 author:  []
 license:            unknown
@@ -9,7 +9,9 @@ configure_requires:
     ExtUtils::MakeMaker:  0
 build_requires:
     ExtUtils::MakeMaker:  0
-requires:  {}
+requires:
+    FindBin:     0
+    Test::More:  0
 resources:
     bugtracker:  https://rt.cpan.org/Public/Dist/Display.html?Name=Data-CTable
     homepage:    http://christhorman.com/projects/perl/Data-CTable/
